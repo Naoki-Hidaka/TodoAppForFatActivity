@@ -19,19 +19,19 @@ class TaskAddActivity : AppCompatActivity() {
 
         val titleText = findViewById<EditText>(R.id.title)
         val descriptionText = findViewById<EditText>(R.id.description)
-        val completeButton = findViewById<Button>(R.id.completeButton)
 
-        completeButton.setOnClickListener {
+        findViewById<Button>(R.id.completeButton).setOnClickListener {
             lifecycleScope.launch(Dispatchers.IO) {
-                val task = Task(
-                    0,
-                    titleText.text.toString(),
-                    descriptionText.text.toString(),
-                    System.currentTimeMillis(),
-                    System.currentTimeMillis(),
-                    false
+                taskDao.insertTask(
+                    Task(
+                        0,
+                        titleText.text.toString(),
+                        descriptionText.text.toString(),
+                        System.currentTimeMillis(),
+                        System.currentTimeMillis(),
+                        false
+                    )
                 )
-                taskDao.insertTask(task)
                 withContext(Dispatchers.Main) { onBackPressed() }
             }
         }

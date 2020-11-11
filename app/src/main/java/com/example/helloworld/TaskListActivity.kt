@@ -36,16 +36,16 @@ class TaskListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_task_list)
 
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-        recyclerView.adapter = adapter
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        val divider = DividerItemDecoration(this, LinearLayoutManager.VERTICAL)
-        recyclerView.addItemDecoration(divider)
+        findViewById<RecyclerView>(R.id.recyclerView).let {
+            it.adapter = adapter
+            it.layoutManager = LinearLayoutManager(this)
+            it.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
+        }
 
-        val fab = findViewById<FloatingActionButton>(R.id.fab)
-        fab.setOnClickListener {
-            val intent = Intent(this, TaskAddActivity::class.java)
-            startActivity(intent)
+        findViewById<FloatingActionButton>(R.id.fab).let {
+            it.setOnClickListener {
+                startActivity(Intent(this, TaskAddActivity::class.java))
+            }
         }
 
     }
@@ -60,41 +60,27 @@ class TaskListActivity : AppCompatActivity() {
 
     private inner class TaskListAdapter : RecyclerView.Adapter<TaskItemViewHolder>() {
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskItemViewHolder =
-            TaskItemViewHolder(
-                LayoutInflater.from(this@TaskListActivity)
-                    .inflate(R.layout.item_task_list, parent, false)
-            )
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int
+        ): TaskItemViewHolder = TaskItemViewHolder(
+            LayoutInflater.from(this@TaskListActivity)
+                .inflate(R.layout.item_task_list, parent, false)
+        )
 
         override fun onBindViewHolder(holder: TaskItemViewHolder, position: Int) {
-            holder.titleTextView.text = taskList[position].title
-            holder.container.setOnClickListener {
-                val intent = Intent(this@TaskListActivity, TaskDetailActivity::class.java)
-                intent.putExtra("id", taskList[position].id)
-                startActivity(intent)
-            }
-            holder.container.setOnLongClickListener {
-                AlertDialog.Builder(this@TaskListActivity)
-                    .setItems(dialogList) { _, which ->
-                        when (which) {
-                            0 -> lifecycleScope.launch(Dispatchers.Default) {
-                                val intent =
-                                    Intent(this@TaskListActivity, TaskModifyActivity::class.java)
-                                intent.putExtra("id", taskList[position].id)
-                                startActivity(intent)
-                            }
-                            1 -> lifecycleScope.launch(Dispatchers.Default) {
-                                taskDao.deleteTask(taskList[position])
-                                taskList = taskDao.getAll()
-                                withContext(Dispatchers.Main) {
-                                    adapter.notifyItemRemoved(position)
-                                }
-
-                            }
-                        }
+            holder.run {
+                titleTextView.text = taskList[position].title
+                container.setOnClickListener {
+                    Intent(this@TaskListActivity, TaskDetailActivity::class.java).run {
+                        putExtra("id", taskList[position].id)
+                        startActivity(this)
                     }
-                    .show()
-                true
+                }
+                container.setOnLongClickListener {
+                    showAlertDialog(position)
+                    true
+                }
             }
         }
 
@@ -104,5 +90,27 @@ class TaskListActivity : AppCompatActivity() {
     private inner class TaskItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val container: FrameLayout = itemView.findViewById(R.id.container)
         val titleTextView: TextView = itemView.findViewById(R.id.title)
+    }
+
+    fun showAlertDialog(position: Int) {
+        AlertDialog.Builder(this@TaskListActivity)
+            .setItems(dialogList) { _, which ->
+                when (which) {
+                    0 -> Intent(
+                        this@TaskListActivity,
+                        TaskModifyActivity::class.java
+                    ).run {
+                        putExtra("id", taskList[position].id)
+                        startActivity(this)
+                    }
+                    1 -> lifecycleScope.launch(Dispatchers.Default) {
+                        taskDao.deleteTask(taskList[position])
+                        taskList = taskDao.getAll()
+                        withContext(Dispatchers.Main) {
+                            adapter.notifyItemRemoved(position)
+                        }
+                    }
+                }
+            }.show()
     }
 }

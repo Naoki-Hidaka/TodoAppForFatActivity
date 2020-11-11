@@ -21,7 +21,21 @@ class TaskModifyActivity : AppCompatActivity() {
 
         val titleText = findViewById<EditText>(R.id.title)
         val descriptionText = findViewById<EditText>(R.id.description)
-        val completeButton = findViewById<Button>(R.id.completeButton)
+        findViewById<Button>(R.id.completeButton).setOnClickListener {
+            lifecycleScope.launch(Dispatchers.IO) {
+                taskDao.updateTask(
+                    Task(
+                        0,
+                        titleText.text.toString(),
+                        descriptionText.text.toString(),
+                        task.createdAt,
+                        System.currentTimeMillis(),
+                        false
+                    )
+                )
+                withContext(Dispatchers.Main) { onBackPressed() }
+            }
+        }
 
         val id = intent.getIntExtra("id", 0)
 
@@ -30,21 +44,6 @@ class TaskModifyActivity : AppCompatActivity() {
             withContext(Dispatchers.Main) {
                 titleText.setText(task.title)
                 descriptionText.setText(task.description)
-            }
-        }
-
-        completeButton.setOnClickListener {
-            lifecycleScope.launch(Dispatchers.IO) {
-                val task = Task(
-                    0,
-                    titleText.text.toString(),
-                    descriptionText.text.toString(),
-                    task.createdAt,
-                    System.currentTimeMillis(),
-                    false
-                )
-                taskDao.updateTask(task)
-                withContext(Dispatchers.Main) { onBackPressed() }
             }
         }
     }
